@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vehicle Check">
+<title>Vehicle Check</title>
+<style>
+  :root{
+    --navy:#152A5E;
+    --navy-deep:#0C1938;
+    --gold:#F5B71A;
+    --paper:#EFF1F6;
+    --line:rgba(239,241,246,.22);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
+  body{
+    background:var(--navy-deep);
+    color:var(--paper);
+    font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    user-select:none;-webkit-user-select:none;
+    touch-action:manipulation;
+  }
+  #screen{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:max(24px,env(safe-area-inset-top)) 24px 96px;
+    background:var(--navy);
+    transition:background .1s linear;
+    cursor:pointer;
+  }
+  .eyebrow{
+    font-size:clamp(11px,1.6vh,15px);
+    font-weight:700;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--gold);text-align:center;
+  }
+  .prompt{
+    margin-top:4vh;
+    font-size:clamp(30px,7.4vh,84px);
+    font-weight:800;line-height:.98;letter-spacing:-.02em;
+    text-transform:uppercase;text-align:center;
+  }
+  .hint{
+    margin-top:3vh;
+    font-size:clamp(12px,1.8vh,17px);
+    letter-spacing:.18em;text-transform:uppercase;
+    color:rgba(239,241,246,.55);
+  }
+  #screen.selected{background:var(--gold);color:var(--navy-deep)}
+  #screen.standard{background:var(--navy-deep)}
+  .verdict{
+    font-size:clamp(40px,13vh,180px);
+    font-weight:900;line-height:.88;letter-spacing:-.035em;
+    text-transform:uppercase;text-align:center;
+  }
+  #screen.standard .verdict{color:var(--paper)}
+  .rule{width:clamp(60px,14vw,160px);height:6px;margin:4.5vh 0;background:currentColor;opacity:.9}
+  .sub{
+    font-size:clamp(13px,2.1vh,22px);
+    font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    opacity:.7;text-align:center;
+  }
+  #tally{
+    position:fixed;left:0;right:0;bottom:0;
+    padding:14px 20px max(14px,env(safe-area-inset-bottom));
+    display:flex;gap:26px;align-items:baseline;justify-content:center;
+    border-top:1px solid var(--line);
+    font-size:clamp(11px,1.5vh,14px);letter-spacing:.14em;text-transform:uppercase;
+    color:rgba(239,241,246,.6);cursor:pointer;
+  }
+  #tally b{font-size:clamp(15px,2.2vh,21px);font-weight:800;color:var(--paper);letter-spacing:0}
+  #screen.result ~ #tally{opacity:0;pointer-events:none}
+
+  #log{
+    position:fixed;inset:0;z-index:10;display:none;flex-direction:column;
+    background:var(--navy-deep);
+    padding:max(20px,env(safe-area-inset-top)) 22px max(20px,env(safe-area-inset-bottom));
+  }
+  #log.open{display:flex}
+  .log-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .log-title{font-size:16px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
+  .log-rows{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .row{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;align-items:baseline;
+    padding:15px 2px;border-bottom:1px solid rgba(239,241,246,.09);font-variant-numeric:tabular-nums}
+  .row .d{font-size:15px;font-weight:600}
+  .row .n{font-size:15px;color:rgba(239,241,246,.62);min-width:52px;text-align:right}
+  .row .p{font-size:15px;font-weight:800;color:var(--gold);min-width:48px;text-align:right}
+  .row.head{border-bottom:1px solid var(--line)}
+  .row.head span{font-size:10px;color:rgba(239,241,246,.45);font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+  .empty{padding:40px 0;color:rgba(239,241,246,.45);font-size:14px}
+  .log-foot{display:flex;gap:10px;padding-top:16px}
+  button{
+    padding:13px 18px;border:1px solid var(--line);border-radius:10px;
+    background:none;color:rgba(239,241,246,.75);font:inherit;font-size:12px;
+    font-weight:700;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
+  }
+  button.primary{background:var(--gold);border-color:var(--gold);color:var(--navy-deep)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="screen">
+  <div id="idle">
+    <div class="eyebrow">Vehicle Screening</div>
+    <div class="prompt">Tap to<br>check vehicle</div>
+    <div class="hint">Anywhere on screen</div>
+  </div>
+</div>
+
+<div id="tally">
+  <span>Selected <b id="c-sel">0</b></span>
+  <span>Total <b id="c-tot">0</b></span>
+  <span>Rate <b id="c-pct">&mdash;</b></span>
+</div>
+
+<div id="log">
+  <div class="log-head">
+    <div class="log-title">Daily record</div>
+    <button id="close">Close</button>
+  </div>
+  <div class="log-rows">
+    <div class="row head"><span>Date</span><span>Sel</span><span>Total</span><span>Rate</span></div>
+    <div id="rows"></div>
+  </div>
+  <div class="log-foot">
+    <button class="primary" id="copy">Copy CSV</button>
+    <button id="clear">Clear all</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var RATE = 0.35;
+  var KEY  = 'vehicle-check-log';
+  var screenEl = document.getElementById('screen');
+  var idleHTML = document.getElementById('idle').outerHTML;
+  var showingResult = false;
+  var log = {};
+
+  function today(){
+    var d = new Date(), p = function(n){ return (n<10?'0':'') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+  }
+  function day(){
+    if(!log[today()]) log[today()] = {sel:0, tot:0};
+    return log[today()];
+  }
+
+  function load(){
+    try{ log = JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ log = {}; }
+    paint();
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(log)); }catch(e){}
+  }
+
+  function pct(d){ return d.tot ? Math.round(d.sel / d.tot * 100) + '%' : '\u2014'; }
+
+  function paint(){
+    var d = day();
+    document.getElementById('c-sel').textContent = d.sel;
+    document.getElementById('c-tot').textContent = d.tot;
+    document.getElementById('c-pct').textContent = pct(d);
+  }
+
+  function draw(){
+    var d = day();
+    var hit = Math.random() < RATE;
+    d.tot++; if(hit) d.sel++;
+    save(); paint();
+
+    screenEl.className = 'result ' + (hit ? 'selected' : 'standard');
+    screenEl.innerHTML =
+      '<div class="verdict">' +
+        (hit ? 'Additional<br>screening<br>required' : 'Standard<br>security<br>checks only') +
+      '</div>' +
+      '<div class="rule"></div>' +
+      '<div class="sub">Tap to continue</div>';
+    showingResult = true;
+  }
+
+  function reset(){
+    screenEl.className = '';
+    screenEl.innerHTML = idleHTML;
+    showingResult = false;
+  }
+
+  screenEl.addEventListener('click', function(){ showingResult ? reset() : draw(); });
+
+  function dates(){ return Object.keys(log).sort().reverse(); }
+
+  function renderLog(){
+    var out = '', ds = dates();
+    if(!ds.length) out = '<div class="empty">No checks recorded yet.</div>';
+    ds.forEach(function(k){
+      var d = log[k];
+      out += '<div class="row"><span class="d">' + k + '</span>' +
+             '<span class="n">' + d.sel + '</span>' +
+             '<span class="n">' + d.tot + '</span>' +
+             '<span class="p">' + pct(d) + '</span></div>';
+    });
+    document.getElementById('rows').innerHTML = out;
+    document.getElementById('log').classList.add('open');
+  }
+
+  document.getElementById('tally').addEventListener('click', renderLog);
+  document.getElementById('close').addEventListener('click', function(){
+    document.getElementById('log').classList.remove('open');
+  });
+
+  document.getElementById('copy').addEventListener('click', function(){
+    var csv = 'date,selected,not_selected,total,rate\n';
+    dates().slice().reverse().forEach(function(k){
+      var d = log[k];
+      csv += k + ',' + d.sel + ',' + (d.tot - d.sel) + ',' + d.tot + ',' +
+             (d.tot ? (d.sel / d.tot * 100).toFixed(1) : '0') + '\n';
+    });
+    var done = function(){
+      var b = document.getElementById('copy');
+      b.textContent = 'Copied';
+      setTimeout(function(){ b.textContent = 'Copy CSV'; }, 1600);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(csv).then(done, function(){ prompt('Copy this:', csv); });
+    } else {
+      prompt('Copy this:', csv);
+    }
+  });
+
+  document.getElementById('clear').addEventListener('click', function(){
+    if(confirm('Delete the entire record?')){ log = {}; save(); paint(); renderLog(); }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
