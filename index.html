@@ -83,15 +83,27 @@
   #log.open{display:flex}
   .log-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--line)}
   .log-title{font-size:16px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}
-  .log-rows{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  .row{display:grid;grid-template-columns:1fr auto auto auto;gap:16px;align-items:baseline;
-    padding:15px 2px;border-bottom:1px solid rgba(239,241,246,.09);font-variant-numeric:tabular-nums}
-  .row .d{font-size:15px;font-weight:600}
-  .row .n{font-size:15px;color:rgba(239,241,246,.62);min-width:52px;text-align:right}
-  .row .p{font-size:15px;font-weight:800;color:var(--gold);min-width:48px;text-align:right}
-  .row.head{border-bottom:1px solid var(--line)}
-  .row.head span{font-size:10px;color:rgba(239,241,246,.45);font-weight:700;letter-spacing:.16em;text-transform:uppercase}
-  .empty{padding:40px 0;color:rgba(239,241,246,.45);font-size:14px}
+  .head-actions{display:flex;gap:8px}
+
+  .summary{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+    padding:20px 2px;border-bottom:1px solid var(--line);
+  }
+  .stat{display:flex;flex-direction:column;align-items:center;gap:5px}
+  .stat b{font-size:clamp(20px,3.6vh,30px);font-weight:800;color:var(--paper);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .stat b.g{color:var(--gold)}
+  .stat span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(239,241,246,.45);font-weight:700}
+
+  .log-rows{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:4px}
+  .row{padding:15px 2px;border-bottom:1px solid rgba(239,241,246,.09)}
+  .r-top{display:flex;align-items:baseline;justify-content:space-between}
+  .row .d{font-size:15px;font-weight:700}
+  .row .p{font-size:16px;font-weight:800;color:var(--gold);font-variant-numeric:tabular-nums}
+  .bar{margin:9px 0 7px;height:6px;border-radius:99px;background:rgba(239,241,246,.1);overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .3s ease}
+  .r-sub{font-size:12px;color:rgba(239,241,246,.5);font-variant-numeric:tabular-nums}
+  .empty{padding:48px 0;text-align:center;color:rgba(239,241,246,.45);font-size:14px}
+
   .log-foot{display:flex;gap:10px;padding-top:16px}
   button{
     padding:13px 18px;border:1px solid var(--line);border-radius:10px;
@@ -99,6 +111,30 @@
     font-weight:700;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;
   }
   button.primary{background:var(--gold);border-color:var(--gold);color:var(--navy-deep)}
+  button.icon{padding:13px 14px}
+  .log-foot button{flex:1}
+
+  #pin{
+    position:fixed;inset:0;z-index:20;display:none;
+    align-items:center;justify-content:center;padding:24px;
+    background:rgba(12,25,56,.82);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  }
+  #pin.open{display:flex}
+  .sheet{
+    width:100%;max-width:320px;background:var(--navy);
+    border:1px solid var(--line);border-radius:16px;
+    padding:22px;display:flex;flex-direction:column;gap:14px;
+  }
+  .sheet-title{font-size:15px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);text-align:center}
+  #pin-input{
+    width:100%;text-align:center;font-size:30px;letter-spacing:.4em;font-weight:800;
+    padding:14px 14px 14px 24px;border:1px solid var(--line);border-radius:12px;
+    background:var(--navy-deep);color:var(--paper);font-family:inherit;
+  }
+  #pin-input:focus{outline:none;border-color:var(--gold)}
+  .pin-msg{min-height:16px;text-align:center;font-size:12px;color:rgba(239,241,246,.6);letter-spacing:.02em}
+  .sheet-foot{display:flex;gap:10px}
+  .sheet-foot button{flex:1}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -121,15 +157,34 @@
 <div id="log">
   <div class="log-head">
     <div class="log-title">Daily record</div>
-    <button id="close">Close</button>
+    <div class="head-actions">
+      <button id="close">Close</button>
+    </div>
+  </div>
+  <div class="summary">
+    <div class="stat"><b id="s-days">0</b><span>Days</span></div>
+    <div class="stat"><b id="s-sel" class="g">0</b><span>Selected</span></div>
+    <div class="stat"><b id="s-tot">0</b><span>Total</span></div>
+    <div class="stat"><b id="s-rate" class="g">&mdash;</b><span>Rate</span></div>
   </div>
   <div class="log-rows">
-    <div class="row head"><span>Date</span><span>Sel</span><span>Total</span><span>Rate</span></div>
     <div id="rows"></div>
   </div>
   <div class="log-foot">
-    <button class="primary" id="copy">Copy CSV</button>
+    <button class="primary" id="download">Download for Excel</button>
     <button id="clear">Clear all</button>
+  </div>
+</div>
+
+<div id="pin">
+  <div class="sheet">
+    <div class="sheet-title" id="pin-title">Enter PIN</div>
+    <input id="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;">
+    <div class="pin-msg" id="pin-msg"></div>
+    <div class="sheet-foot">
+      <button id="pin-cancel">Cancel</button>
+      <button class="primary" id="pin-ok">OK</button>
+    </div>
   </div>
 </div>
 
@@ -137,10 +192,29 @@
 (function(){
   var RATE = 0.35;
   var KEY  = 'vehicle-check-log';
+  // Fixed PIN, stored only as a hash so the number never appears in the source.
+  // To change it: compute cyrb53('<new pin>') and replace the value below.
+  var PIN_HASH = 4183276382906143;
+  function pinHash(s){
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for(var i=0, ch; i<s.length; i++){
+      ch = s.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1>>>16), 2246822507); h1 ^= Math.imul(h2 ^ (h2>>>13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2>>>16), 2246822507); h2 ^= Math.imul(h1 ^ (h1>>>13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1>>>0);
+  }
   var screenEl = document.getElementById('screen');
+  var logEl    = document.getElementById('log');
   var idleHTML = document.getElementById('idle').outerHTML;
   var showingResult = false;
   var log = {};
+  var shownDate = '';
+
+  var WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   function today(){
     var d = new Date(), p = function(n){ return (n<10?'0':'') + n; };
@@ -159,9 +233,11 @@
     try{ localStorage.setItem(KEY, JSON.stringify(log)); }catch(e){}
   }
 
-  function pct(d){ return d.tot ? Math.round(d.sel / d.tot * 100) + '%' : '\u2014'; }
+  function pct(d){ return d.tot ? Math.round(d.sel / d.tot * 100) + '%' : '—'; }
+  function pctNum(d){ return d.tot ? Math.round(d.sel / d.tot * 100) : 0; }
 
   function paint(){
+    shownDate = today();
     var d = day();
     document.getElementById('c-sel').textContent = d.sel;
     document.getElementById('c-tot').textContent = d.tot;
@@ -192,48 +268,112 @@
 
   screenEl.addEventListener('click', function(){ showingResult ? reset() : draw(); });
 
+  // Keep the tally honest across a midnight rollover or when the app is
+  // brought back to the foreground (it was frozen on the old day's numbers).
+  function refresh(){
+    paint();
+    if(logEl.classList.contains('open')) renderLog();
+  }
+  setInterval(function(){ if(today() !== shownDate) refresh(); }, 15000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) refresh(); });
+  window.addEventListener('focus', refresh);
+  window.addEventListener('pageshow', refresh);
+
   function dates(){ return Object.keys(log).sort().reverse(); }
 
+  function fmtDate(k){
+    var a = k.split('-');
+    var dt = new Date(+a[0], +a[1]-1, +a[2]);
+    return WD[dt.getDay()] + ', ' + (+a[2]) + ' ' + MO[+a[1]-1];
+  }
+
   function renderLog(){
-    var out = '', ds = dates();
-    if(!ds.length) out = '<div class="empty">No checks recorded yet.</div>';
-    ds.forEach(function(k){
-      var d = log[k];
-      out += '<div class="row"><span class="d">' + k + '</span>' +
-             '<span class="n">' + d.sel + '</span>' +
-             '<span class="n">' + d.tot + '</span>' +
-             '<span class="p">' + pct(d) + '</span></div>';
-    });
+    var ds = dates(), tSel = 0, tTot = 0;
+    ds.forEach(function(k){ tSel += log[k].sel; tTot += log[k].tot; });
+
+    document.getElementById('s-days').textContent = ds.length;
+    document.getElementById('s-sel').textContent  = tSel;
+    document.getElementById('s-tot').textContent  = tTot;
+    document.getElementById('s-rate').textContent = tTot ? Math.round(tSel / tTot * 100) + '%' : '—';
+
+    var out = '';
+    if(!ds.length){
+      out = '<div class="empty">No checks recorded yet.</div>';
+    } else {
+      ds.forEach(function(k){
+        var d = log[k];
+        out += '<div class="row">' +
+                 '<div class="r-top"><span class="d">' + fmtDate(k) + '</span>' +
+                 '<span class="p">' + pct(d) + '</span></div>' +
+                 '<div class="bar"><i style="width:' + pctNum(d) + '%"></i></div>' +
+                 '<div class="r-sub">' + d.sel + ' selected · ' + d.tot + ' total</div>' +
+               '</div>';
+      });
+    }
     document.getElementById('rows').innerHTML = out;
-    document.getElementById('log').classList.add('open');
+    logEl.classList.add('open');
   }
 
   document.getElementById('tally').addEventListener('click', renderLog);
   document.getElementById('close').addEventListener('click', function(){
-    document.getElementById('log').classList.remove('open');
+    logEl.classList.remove('open');
   });
 
-  document.getElementById('copy').addEventListener('click', function(){
-    var csv = 'date,selected,not_selected,total,rate\n';
-    dates().slice().reverse().forEach(function(k){
-      var d = log[k];
-      csv += k + ',' + d.sel + ',' + (d.tot - d.sel) + ',' + d.tot + ',' +
-             (d.tot ? (d.sel / d.tot * 100).toFixed(1) : '0') + '\n';
-    });
-    var done = function(){
-      var b = document.getElementById('copy');
-      b.textContent = 'Copied';
-      setTimeout(function(){ b.textContent = 'Copy CSV'; }, 1600);
-    };
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(csv).then(done, function(){ prompt('Copy this:', csv); });
+  /* ---- PIN protection (fixed PIN, verify only) ---- */
+  var pinEl    = document.getElementById('pin');
+  var pinInput = document.getElementById('pin-input');
+  var pinMsg   = document.getElementById('pin-msg');
+  var pinCb    = null;
+
+  function openPin(cb){
+    pinCb = cb;
+    pinMsg.textContent = '';
+    pinInput.value = '';
+    pinEl.classList.add('open');
+    setTimeout(function(){ pinInput.focus(); }, 50);
+  }
+  function closePin(){ pinEl.classList.remove('open'); pinCb = null; }
+
+  function submitPin(){
+    var v = pinInput.value.trim();
+    if(!/^\d{4}$/.test(v)){ pinMsg.textContent = 'Enter 4 digits.'; return; }
+    if(pinHash(v) === PIN_HASH){
+      var cb = pinCb; closePin(); if(cb) cb();
     } else {
-      prompt('Copy this:', csv);
+      pinMsg.textContent = 'Wrong PIN.'; pinInput.value = '';
     }
+  }
+  document.getElementById('pin-ok').addEventListener('click', submitPin);
+  document.getElementById('pin-cancel').addEventListener('click', closePin);
+  pinInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') submitPin(); });
+
+  /* ---- Download (opens straight in Excel) ---- */
+  document.getElementById('download').addEventListener('click', function(){
+    var SEP = ';'; // pt-BR Excel splits on ';'
+    var csv = '﻿' + ['Data','Selecionados','Nao selecionados','Total','Taxa'].join(SEP) + '\r\n';
+    dates().slice().reverse().forEach(function(k){
+      var d = log[k], a = k.split('-');
+      var br = a[2] + '/' + a[1] + '/' + a[0];
+      var rate = d.tot ? (d.sel / d.tot * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+      csv += [br, d.sel, (d.tot - d.sel), d.tot, rate].join(SEP) + '\r\n';
+    });
+    var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url; a.download = 'vehicle-check-' + today() + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+
+    var b = document.getElementById('download');
+    b.textContent = 'Downloaded';
+    setTimeout(function(){ b.textContent = 'Download for Excel'; }, 1600);
   });
 
+  /* ---- Clear (PIN-gated) ---- */
   document.getElementById('clear').addEventListener('click', function(){
-    if(confirm('Delete the entire record?')){ log = {}; save(); paint(); renderLog(); }
+    openPin(function(){
+      if(confirm('Delete the entire record?')){ log = {}; save(); paint(); renderLog(); }
+    });
   });
 
   load();
