@@ -192,8 +192,6 @@
 (function(){
   var RATE = 0.35;
   var KEY  = 'vehicle-check-log';
-  // Fixed PIN, stored only as a hash so the number never appears in the source.
-  // To change it: compute cyrb53('<new pin>') and replace the value below.
   var PIN_HASH = 4183276382906143;
   function pinHash(s){
     var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
@@ -268,8 +266,6 @@
 
   screenEl.addEventListener('click', function(){ showingResult ? reset() : draw(); });
 
-  // Keep the tally honest across a midnight rollover or when the app is
-  // brought back to the foreground (it was frozen on the old day's numbers).
   function refresh(){
     paint();
     if(logEl.classList.contains('open')) renderLog();
@@ -319,7 +315,6 @@
     logEl.classList.remove('open');
   });
 
-  /* ---- PIN protection (fixed PIN, verify only) ---- */
   var pinEl    = document.getElementById('pin');
   var pinInput = document.getElementById('pin-input');
   var pinMsg   = document.getElementById('pin-msg');
@@ -347,9 +342,8 @@
   document.getElementById('pin-cancel').addEventListener('click', closePin);
   pinInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') submitPin(); });
 
-  /* ---- Download (opens straight in Excel) ---- */
   document.getElementById('download').addEventListener('click', function(){
-    var SEP = ';'; // pt-BR Excel splits on ';'
+    var SEP = ';';
     var csv = '﻿' + ['Data','Selecionados','Nao selecionados','Total','Taxa'].join(SEP) + '\r\n';
     dates().slice().reverse().forEach(function(k){
       var d = log[k], a = k.split('-');
@@ -369,7 +363,6 @@
     setTimeout(function(){ b.textContent = 'Download for Excel'; }, 1600);
   });
 
-  /* ---- Clear (PIN-gated) ---- */
   document.getElementById('clear').addEventListener('click', function(){
     openPin(function(){
       if(confirm('Delete the entire record?')){ log = {}; save(); paint(); renderLog(); }
