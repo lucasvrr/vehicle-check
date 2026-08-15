@@ -344,7 +344,7 @@
 
   document.getElementById('download').addEventListener('click', function(){
     var SEP = ',';
-    var csv = '﻿' + ['Date','Selected','Not selected','Total','Rate'].join(SEP) + '\r\n';
+    var csv = 'sep=' + SEP + '\r\n' + ['Date','Selected','Not selected','Total','Rate'].join(SEP) + '\r\n';
     dates().slice().reverse().forEach(function(k){
       var d = log[k], a = k.split('-');
       var dt = a[2] + '/' + a[1] + '/' + a[0];
