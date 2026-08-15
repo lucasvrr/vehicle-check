@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-AU">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -343,13 +343,13 @@
   pinInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') submitPin(); });
 
   document.getElementById('download').addEventListener('click', function(){
-    var SEP = ';';
-    var csv = '﻿' + ['Data','Selecionados','Nao selecionados','Total','Taxa'].join(SEP) + '\r\n';
+    var SEP = ',';
+    var csv = '﻿' + ['Date','Selected','Not selected','Total','Rate'].join(SEP) + '\r\n';
     dates().slice().reverse().forEach(function(k){
       var d = log[k], a = k.split('-');
-      var br = a[2] + '/' + a[1] + '/' + a[0];
-      var rate = d.tot ? (d.sel / d.tot * 100).toFixed(1).replace('.', ',') + '%' : '0%';
-      csv += [br, d.sel, (d.tot - d.sel), d.tot, rate].join(SEP) + '\r\n';
+      var dt = a[2] + '/' + a[1] + '/' + a[0];
+      var rate = d.tot ? (d.sel / d.tot * 100).toFixed(1) + '%' : '0%';
+      csv += [dt, d.sel, (d.tot - d.sel), d.tot, rate].join(SEP) + '\r\n';
     });
     var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
     var url  = URL.createObjectURL(blob);
