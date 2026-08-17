@@ -190,7 +190,7 @@
 
 <script>
 (function(){
-  var RATE = 0.35;
+  var RATE = 35;
   var KEY  = 'vehicle-check-log';
   var PIN_HASH = 4183276382906143;
   function pinHash(s){
@@ -244,7 +244,10 @@
 
   function draw(){
     var d = day();
-    var hit = Math.random() < RATE;
+    var ideal = RATE * (d.tot + 1);
+    var canSkip   = Math.abs(d.sel * 100 - ideal) <= 100;
+    var canSelect = Math.abs((d.sel + 1) * 100 - ideal) <= 100;
+    var hit = canSelect && (!canSkip || Math.random() * 100 < RATE);
     d.tot++; if(hit) d.sel++;
     save(); paint();
 
